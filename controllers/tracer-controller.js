@@ -6,7 +6,12 @@ function TracerController($config, $event, $logger) {
         var result = [];
         var url = decodeURIComponent(io.inputs["url"]);
         (async () => {
-            const browser = await puppeteer.launch({ headless: true, timeout: 30000, ignoreHTTPSErrors: true });
+            const browser = await puppeteer.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                headless: true,
+                timeout: 30000,
+                ignoreHTTPSErrors: true
+            });
             const page = await browser.newPage();
             try {
                 await page.on('response', response => {

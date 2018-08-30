@@ -12,21 +12,3 @@ function HomeController($config, $event, $logger) {
         });
     }
 }
-
-
-// page.on('request', (data) => console.log(data));    
-
-// await page.on('response', response => {
-//     const url = response.url();
-//     response.buffer()
-//     .then (
-//         buffer => {
-//             bufferString = buffer.toString();         
-//         },
-//         error => {
-//           console.log(error)
-//         }
-//     )
-// })
-
-// await page.goto('https://www.ford.com', {waitUntil: 'networkidle0'});
