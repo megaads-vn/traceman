@@ -1,0 +1,19 @@
+{
+    "name": "traceman",
+    "description": "A tracer for HTTP request",
+    "author": "megaads-vn",
+    "keywords": [],
+    "license": "",
+    "version": "0.0.1",
+    "main": "app.js",
+    "contributors": [],
+    "repository": {},
+    "dependencies": {
+        "crypto": "*",
+        "ejs": "2.*",
+        "lru-cache": "*",
+        "puppeteer": "*",
+        "socket.io": "2.*",
+        "url-pattern": "1.*"
+    }
+}
