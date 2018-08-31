@@ -23,7 +23,7 @@ function TracerController($config, $event, $logger) {
                         "status": status,
                         "contentType": contentType,
                     });
-                    if (status == 200 && contentType.indexOf('text/html') >= 0) {
+                    if (status == 404 || (status == 200 && contentType.indexOf('text/html') >= 0)) {
                         io.json(result);
                     }
                 })
