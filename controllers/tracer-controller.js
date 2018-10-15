@@ -1,14 +1,15 @@
 module.exports = TracerController;
 const puppeteer = require('puppeteer');
 const proxyChain = require('proxy-chain');
+const proxyUrl = 'http://zproxy.lum-superproxy.io:22225';
+const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
+const username = 'lum-customer-hl_8bc69a16-zone-static';
+const password = 'ljhv5rpi3kg6';
 
 function TracerController($config, $event, $logger) {
     this.redirection = function (io) {
         var result = [];
         var url = decodeURIComponent(io.inputs["url"]);
-        const proxyUrl = 'http://zproxy.lum-superproxy.io:22225';
-        var username = 'lum-customer-hl_8bc69a16-zone-static';
-        var password = 'ljhv5rpi3kg6';
         (async () => {
             const browser = await puppeteer.launch({
                 args: [
@@ -21,6 +22,7 @@ function TracerController($config, $event, $logger) {
                 ignoreHTTPSErrors: true
             });
             const page = await browser.newPage();
+            await page.setUserAgent(userAgent);
             await page.authenticate({ username, password });
             try {
                 await page.on('response', response => {
