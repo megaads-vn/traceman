@@ -12,6 +12,7 @@
         "crypto": "*",
         "ejs": "2.*",
         "lru-cache": "*",
+        "proxy-chain": "^0.2.5",
         "puppeteer": "*",
         "socket.io": "2.*",
         "url-pattern": "1.*"
