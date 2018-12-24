@@ -1,6 +1,6 @@
 module.exports = TracerController;
 var RateLimiter = require('limiter').RateLimiter;
-var requestLimiter = new RateLimiter(1, 2000);
+var requestLimiter = new RateLimiter(1, 1000);
 const puppeteer = require('puppeteer');
 const proxyChain = require('proxy-chain');
 const proxyUrl = 'http://zproxy.lum-superproxy.io:22225';
