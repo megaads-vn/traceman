@@ -38,15 +38,14 @@ function TracerController($config, $event, $logger) {
                             const url = response.url();
                             const status = response.status();
                             const contentType = response.headers()['content-type'];
-                            console.log("response", response)
                             result.push({
                                 "url": url,
                                 "status": status,
                                 "contentType": contentType,
                             });
-                            // if (status == 404) {
-                            //     io.json(result);
-                            // }
+                            if (status == 404 || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
+                                io.json(result);
+                            }
                         })
                         await page.goto(url, { waitUntil: 'networkidle0' });
                         await page.close();
