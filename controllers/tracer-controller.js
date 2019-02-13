@@ -19,6 +19,7 @@ function TracerController($config, $event, $logger) {
             } else {
                 requestLimiter.removeTokens(1, async function () {
                     var result = [];
+                    var isResponded = false;
                     var url = decodeURIComponent(io.inputs["url"]);
                     const browser = await puppeteer.launch({
                         args: [
@@ -28,7 +29,7 @@ function TracerController($config, $event, $logger) {
                         ],
                         headless: true,
                         timeout: 30000,
-                        ignoreHTTPSErrors: true    
+                        ignoreHTTPSErrors: true
                     });
                     const page = await browser.newPage();
                     await page.setUserAgent(userAgent);
@@ -38,15 +39,19 @@ function TracerController($config, $event, $logger) {
                             const url = response.url();
                             const status = response.status();
                             const contentType = response.headers()['content-type'];
-                            result.push({
-                                "url": url,
-                                "status": status,
-                                "contentType": contentType,
-                            });
-                            if (status == 404 || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
-                                io.json(result);
+                            if (!isResponded) {
+                                result.push({
+                                    "url": url,
+                                    "status": status,
+                                    "contentType": contentType,
+                                });
+                                if (status == 404 || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
+                                    isResponded = true;
+                                    cache.put(io.inputs["url"], result);
+                                    io.json(result);
+                                }
                             }
-                        })
+                        });
                         await page.goto(url, { waitUntil: 'networkidle0' });
                         await page.close();
                         await browser.close();
@@ -54,10 +59,12 @@ function TracerController($config, $event, $logger) {
                         await page.close();
                         await browser.close();
                     }
-                    cache.put(io.inputs["url"], result);
-                    io.json(result);
+                    if (!isResponded) {
+                        cache.put(io.inputs["url"], result);
+                        io.json(result);
+                    }
                 });
-            }            
+            }
         })(io);
     }
 }
