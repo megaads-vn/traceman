@@ -21,6 +21,7 @@ function TracerController($config, $event, $logger) {
                     var result = [];
                     var isResponded = false;
                     var url = decodeURIComponent(io.inputs["url"]);
+                    $logger.debug("url", url);
                     const browser = await puppeteer.launch({
                         args: [
                             '--no-sandbox',
