@@ -20,7 +20,7 @@ function TracerController($config, $event, $logger) {
                 requestLimiter.removeTokens(1, async function () {
                     var result = [];
                     var isResponded = false;
-                    var url = decodeURIComponent(io.inputs["url"]);
+                    var url = decodeURIComponent(decodeURIComponent(io.inputs["url"]));
                     $logger.debug("url", url);
                     const browser = await puppeteer.launch({
                         args: [
