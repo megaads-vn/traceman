@@ -45,7 +45,8 @@ function TracerController($config, $event, $logger) {
                                     "status": status,
                                     "contentType": contentType,
                                 });
-                                if (status == 404 || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
+                                if (status == 404 || status == 403
+                                    || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
                                     isResponded = true;
                                     cache.put(io.inputs["url"], result);
                                     io.json(result);
