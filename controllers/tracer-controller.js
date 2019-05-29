@@ -23,7 +23,7 @@ function TracerController($config, $event, $logger) {
                     $logger.debug("url", url);
                     $logger.debug("Request using CURL ...");
                     var result = await requestUsingCurl(url);
-                    if (result == null || result.length == 0) {
+                    if (result == null || result.length <= 2) {
                         $logger.debug("Request using Browser ...");
                         result = await requestUsingBrowser(url);
                     }
