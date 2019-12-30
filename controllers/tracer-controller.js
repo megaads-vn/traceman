@@ -27,6 +27,15 @@ function TracerController($config, $event, $logger) {
                         $logger.debug("Request using Browser ...");
                         result = await requestUsingBrowser(url);
                     }
+                    if ((result == null || result.length <= 2)
+                        && io.inputs["location"] != null) {
+                        var proxyConfig = $config.get("proxies." + io.inputs["location"], null);
+                        if (proxyConfig == null) {
+                            proxyConfig = $config.get("proxies.default");
+                        }
+                        $logger.debug("Request using Browser via proxy ...");
+                        result = await requestUsingBrowser(url, proxyConfig);
+                    }
                     if (result != null && result.length > 0) {
                         cache.put(io.inputs["url"], result);
                     }
@@ -35,22 +44,30 @@ function TracerController($config, $event, $logger) {
             }
         })(io);
     }
-    async function requestUsingBrowser(url) {
+    async function requestUsingBrowser(url, proxyConfig) {
         var result = [];
         var isResponded = false;
-        const browser = await puppeteer.launch({
+        var browserConfig = {
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                // '--proxy-server=' + proxyUrl
             ],
             headless: true,
             timeout: 30000,
             ignoreHTTPSErrors: true
-        });
+        };
+        if (proxyConfig != null) {
+            browserConfig.args.push('--proxy-server=' + proxyConfig.url);
+        }
+        const browser = await puppeteer.launch(browserConfig);
         const page = await browser.newPage();
         await page.setUserAgent(userAgent);
-        // await page.authenticate({ username, password });
+        if (proxyConfig != null) {
+            await page.authenticate({
+                "username": proxyConfig.username,
+                "password": proxyConfig.password
+            });
+        }
         return new Promise(async (resolve, reject) => {
             try {
                 await page.on('response', response => {
