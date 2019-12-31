@@ -46,6 +46,7 @@ function TracerController($config, $event, $logger) {
     }
     async function requestUsingBrowser(url, proxyConfig) {
         var result = [];
+        let isNotViglink = false;
         var isResponded = false;
         var browserConfig = {
             args: [
@@ -72,6 +73,7 @@ function TracerController($config, $event, $logger) {
             try {
                 await page.on('response', response => {
                     const url = response.url();
+                    isNotViglink = url.indexOf('redirect.viglink') < 0;
                     const status = response.status();
                     const contentType = response.headers()['content-type'];
                     if (!isResponded) {
@@ -80,14 +82,23 @@ function TracerController($config, $event, $logger) {
                             "status": status,
                             "contentType": contentType,
                         });
-                        if (status == 404 || status == 403
-                            || (status == 200 && contentType != null && contentType.indexOf('text/html') >= 0)) {
+                        if (status == 405 || status == 403
+                            || (
+                                status == 200
+                                && contentType != null
+                                && contentType.indexOf('text/html') >= 0
+                                && url.indexOf('redirect.viglink') < 0
+                            )) {
                             isResponded = true;
                             resolve(result);
                         }
                     }
                 });
-                await page.goto(url, { waitUntil: 'networkidle0' });
+                if (url.indexOf('redirect.viglink') < 0) {
+                    await page.goto(url, { waitUntil: 'networkidle0' });
+                } else {
+                    await page.goto(url);
+                }
                 await page.close();
                 await browser.close();
             } catch (error) {

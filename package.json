@@ -11,7 +11,7 @@
     "dependencies": {
         "crypto": "*",
         "ejs": "2.*",
-        "lru-cache": "*",
+        "lru-cache": "4.*",
         "proxy-chain": "^0.2.5",
         "puppeteer": "*",
         "socket.io": "2.*",
