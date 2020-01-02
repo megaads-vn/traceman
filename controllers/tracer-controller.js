@@ -71,37 +71,47 @@ function TracerController($config, $event, $logger) {
         }
         return new Promise(async (resolve, reject) => {
             try {
-                await page.on('response', response => {
+                page.on('response', async(response) => {
                     const url = response.url();
-                    isNotViglink = url.indexOf('redirect.viglink') < 0;
                     const status = response.status();
                     const contentType = response.headers()['content-type'];
-                    if (!isResponded) {
-                        result.push({
-                            "url": url,
-                            "status": status,
-                            "contentType": contentType,
-                        });
-                        if (status == 405 || status == 403
-                            || (
-                                status == 200
-                                && contentType != null
-                                && contentType.indexOf('text/html') >= 0
-                                && url.indexOf('redirect.viglink') < 0
-                            )) {
-                            isResponded = true;
-                            resolve(result);
+                    if (contentType && contentType.indexOf('text/html') > -1) {
+                        let isRedirect = false;
+                        if (status == 200) {
+                            let body = await response.text();
+                            console.log(url);
+                            isRedirect =
+                                (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
+                                || body.toLowerCase().indexOf('window.location.replace') > -1)
+                        }
+                        console.log(url, status, contentType, isRedirect, isResponded);
+                        if (!isResponded) {
+                            result.push({
+                                "url": url,
+                                "status": status,
+                                "contentType": contentType,
+                            });
+                            if (status == 405 || status == 403
+                                || (
+                                    status == 200
+                                    && contentType != null
+                                    && contentType.indexOf('text/html') >= 0
+                                    && !isRedirect
+                                )) {
+                                isResponded = true;
+                                resolve(result);
+                                page.close();
+                                browser.close();
+                            }
                         }
                     }
+                })
+                process.on('unhandledRejection', error => {
+                    // Do not log error when suddenly close browser!
                 });
-                if (url.indexOf('redirect.viglink') < 0) {
-                    await page.goto(url, { waitUntil: 'networkidle0' });
-                } else {
-                    await page.goto(url);
-                }
-                await page.close();
-                await browser.close();
-            } catch (error) {
+                await page.goto(url);
+
+            } catch (e) {
                 await page.close();
                 await browser.close();
                 reject(error);
