@@ -79,12 +79,10 @@ function TracerController($config, $event, $logger) {
                         let isRedirect = false;
                         if (status == 200) {
                             let body = await response.text();
-                            console.log(url);
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
                                 || body.toLowerCase().indexOf('window.location.replace') > -1)
                         }
-                        console.log(url, status, contentType, isRedirect, isResponded);
                         if (!isResponded) {
                             result.push({
                                 "url": url,
