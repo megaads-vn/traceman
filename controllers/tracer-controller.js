@@ -128,12 +128,13 @@ function TracerController($config, $event, $logger) {
         var retval = [];
         return new Promise((resolve, reject) => {
             let command = `curl -v -s -L -D - '${url}' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' -o /dev/null -w '%{url_effective}' | egrep 'Location|HTTP/' -i`;
-            exec(command, function (err, stdout, stderr) {
+            exec(command, async function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
                     reject(err);
                 }
                 var result = stdout.split("\n");
+                let destinationUrl;
                 if (result.length == 2) {
                     if (parseStatusCode(result[0]) >= 400) {
                         resolve(retval);
@@ -153,13 +154,20 @@ function TracerController($config, $event, $logger) {
                         if (statusCode == null) {
                             break;
                         }
-                        let destinationUrl = result[index].replace("Location: ", "")
+                        destinationUrl = result[index].replace("Location: ", "")
                                                           .replace("location: ", "")
                                                           .replace("\r", "");
                         retval.push({
                             "url": destinationUrl,
                             "status": statusCode
                         });
+                    }
+                }
+                // Check redirect if status code 200 and redirect using JS
+                if (statusCode == 200) {
+                    let redirectFlow = await getRedirectUrls(destinationUrl);
+                    if (redirectFlow) {
+                        retval.push(redirectFlow);
                     }
                 }
                 resolve(retval);
@@ -173,5 +181,33 @@ function TracerController($config, $event, $logger) {
             retval = matches[2];
         }
         return retval;
+    }
+    async function getRedirectUrls(url) {
+        let retval = false;
+        let isResponded = false;
+        return new Promise((resolve, reject) => {
+            let command = `curl '${url}' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' --compressed | grep 'location.replace'`;
+            exec(command, async function (err, stdout, stderr) {
+                if (err || !stdout) {
+                    resolve(false);
+                    return;
+                }
+                let matches = stdout.match(/window.location.replace\(\'(.*)\'\)/);
+                if (matches != null && matches.length == 2) {
+                    let redirectUrl = (decodeURIComponent(matches[1]
+                        .replaceAll('\b', '')
+                        .replaceAll('\\', '')
+                    ));
+                    resolve({
+                        'url' : redirectUrl,
+                        'status' : ''
+                    });
+                    return;
+                } else {
+                    resolve(false);
+                    return;
+                }
+            })
+        });
     }
 }
