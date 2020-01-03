@@ -14,6 +14,10 @@ const password = 'ljhv5rpi3kg6';
 function TracerController($config, $event, $logger) {
     this.redirection = function (io) {
         ((io) => {
+            if (!io.inputs["url"]) {
+                io.json("Url required!");
+                return;
+            }
             var cachedResult = cache.get(io.inputs["url"]);
             if (cachedResult != null) {
                 io.json(cachedResult);
@@ -123,7 +127,8 @@ function TracerController($config, $event, $logger) {
     async function requestUsingCurl(url) {
         var retval = [];
         return new Promise((resolve, reject) => {
-            exec("curl --head -s -L -D - '" + url + "' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' -o /dev/null -w '%{url_effective}' | egrep 'Location|HTTP/'", function (err, stdout, stderr) {
+            let command = `curl -v -s -L -D - '${url}' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' -o /dev/null -w '%{url_effective}' | egrep 'Location|HTTP/' -i`;
+            exec(command, function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
                     reject(err);
@@ -148,8 +153,11 @@ function TracerController($config, $event, $logger) {
                         if (statusCode == null) {
                             break;
                         }
+                        let destinationUrl = result[index].toLowerCase()
+                                                          .replace("location: ", "")
+                                                          .replace("\r", "");
                         retval.push({
-                            "url": result[index].replace("Location: ", "").replace("\r", ""),
+                            "url": destinationUrl,
                             "status": statusCode
                         });
                     }
