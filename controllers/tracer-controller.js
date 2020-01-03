@@ -153,7 +153,7 @@ function TracerController($config, $event, $logger) {
                         if (statusCode == null) {
                             break;
                         }
-                        let destinationUrl = result[index].toLowerCase()
+                        let destinationUrl = result[index].replace("Location: ", "")
                                                           .replace("location: ", "")
                                                           .replace("\r", "");
                         retval.push({
