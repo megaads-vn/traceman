@@ -39,7 +39,7 @@ function TracerController($config, $event, $logger, $gearman) {
             });
         });
         job.on("timeout", function () {
-            $config.debug("Job timeout!");
+            $logger.debug("Job timeout!");
             io.json({
                 "status": "fail"
             });
