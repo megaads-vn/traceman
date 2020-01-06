@@ -186,7 +186,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                     ));
                     resolve({
                         'url': redirectUrl,
-                        'status': ''
+                        'status': '200'
                     });
                     return;
                 } else {
