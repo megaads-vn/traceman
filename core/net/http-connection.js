@@ -100,7 +100,7 @@ function HttpConnection() {
     }
     function getCallback(method, url) {
         var retval = {
-            urlInputs: [],
+            urlInputs: {},
             url: url,
             fn: null
         };

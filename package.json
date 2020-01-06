@@ -17,6 +17,7 @@
         "socket.io": "2.*",
         "url-pattern": "1.*",
         "limiter": "*",
-        "cache": "*"
+        "cache": "*",
+        "node-gearman": "*"
     }
 }
