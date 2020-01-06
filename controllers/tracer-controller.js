@@ -21,7 +21,7 @@ function TracerController($config, $event, $logger, $gearman) {
     }
     function queueJob(io) {
         var job = $gearman.submitJob("tracer:redirection", JSON.stringify(io.inputs));
-        job.setTimeout(5 * 60 * 1000); // timeout in 5 minutes       
+        job.setTimeout(1 * 60 * 1000); // timeout in 0.6 minutes       
         job.on("data", function (data) {
             var result = JSON.parse(data);
             if (result != null && result.length > 0) {
@@ -33,13 +33,13 @@ function TracerController($config, $event, $logger, $gearman) {
             $logger.debug("Job completed!");
         });
         job.on("error", function (error) {
-            $logger.debug("Job failed!");
+            $logger.debug("Job failed!", io.inputs["url"]);
             io.json({
                 "status": "fail"
             });
         });
         job.on("timeout", function () {
-            $logger.debug("Job timeout!");
+            $logger.debug("Job timeout!", io.inputs["url"]);
             io.json({
                 "status": "fail"
             });
