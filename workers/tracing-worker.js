@@ -1,11 +1,7 @@
 module.exports = TracingWorker;
 var exec = require('child_process').exec;
 const puppeteer = require('puppeteer');
-const proxyChain = require('proxy-chain');
-const proxyUrl = 'http://zproxy.lum-superproxy.io:22225';
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
-const username = 'lum-customer-hl_8bc69a16-zone-static';
-const password = 'ljhv5rpi3kg6';
 
 function TracingWorker($config, $logger, $event, $gearman) {
     $gearman.registerWorker("tracer:redirection", async function (payload, worker) {
@@ -15,7 +11,6 @@ function TracingWorker($config, $logger, $event, $gearman) {
     async function trace(inputs) {
         return new Promise(async function (resolve, reject) {
             var url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
-            $logger.debug("url", url);
             $logger.debug("Request using CURL ...");
             var result = await requestUsingCurl(url);
             if (result == null || result.length <= 2) {
