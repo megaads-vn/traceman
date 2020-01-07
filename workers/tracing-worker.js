@@ -76,16 +76,6 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                 "status": status,
                                 "contentType": contentType,
                             });
-                            console.log("url", url)
-                            console.log("status", status)
-                            console.log("contentType", contentType)
-                            console.log("isRedirect", isRedirect)
-                            console.log("dieu kien", (
-                                status == 200
-                                && contentType != null
-                                && contentType.indexOf('text/html') >= 0
-                                && !isRedirect
-                            ))
                             if (status == 405 || status == 403
                                 || (
                                     status == 200
@@ -93,6 +83,10 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                     && contentType.indexOf('text/html') >= 0
                                     && !isRedirect
                                 )) {
+                                console.log("url", url)
+                                console.log("status", status)
+                                console.log("contentType", contentType)
+                                console.log("isRedirect", isRedirect)
                                 isResponded = true;
                                 resolve(result);
                                 page.close();
