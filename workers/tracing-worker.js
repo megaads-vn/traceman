@@ -101,6 +101,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
                     // Do not log error when suddenly close browser!
                 });
                 await page.goto(url);
+                await page.close();
+                await browser.close();
 
             } catch (e) {
                 await page.close();
