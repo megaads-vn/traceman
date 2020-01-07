@@ -68,6 +68,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
                                     || body.toLowerCase().indexOf('location.replace') > -1)
+                            console.log(`${url} is ${isRedirect} redirect`);
                         }
                         if (!isResponded) {
                             result.push({
@@ -75,6 +76,16 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                 "status": status,
                                 "contentType": contentType,
                             });
+                            console.log("url", url)
+                            console.log("status", status)
+                            console.log("contentType", contentType)
+                            console.log("isRedirect", isRedirect)
+                            console.log("dieu kien", (
+                                status == 200
+                                && contentType != null
+                                && contentType.indexOf('text/html') >= 0
+                                && !isRedirect
+                            ))
                             if (status == 405 || status == 403
                                 || (
                                     status == 200
