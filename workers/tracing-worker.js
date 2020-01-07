@@ -83,13 +83,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                     && contentType.indexOf('text/html') >= 0
                                     && !isRedirect
                                 )) {
-                                console.log("url", url)
-                                console.log("status", status)
-                                console.log("contentType", contentType)
-                                console.log("isRedirect", isRedirect)
                                 isResponded = true;
-                                console.log("changing isResponded to true");
-                                console.log("resolve 91")
                                 resolve(result);
                                 await page.close();
                                 await browser.close();
@@ -105,8 +99,6 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 // await browser.close();
                 setTimeout(function(isResponded){
                     if (!isResponded) {
-                        console.log("resolve 110")
-                        console.log("url", url)
                         resolve(result);
                     }
                 }, 25000);
@@ -126,6 +118,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
             exec(command, async function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
+                    resolve([]);
                     reject(err);
                 }
                 var result = stdout.split("\n");
