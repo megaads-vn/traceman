@@ -67,7 +67,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                             let body = await response.text();
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
-                                    || body.toLowerCase().indexOf('window.location.replace') > -1)
+                                    || body.toLowerCase().indexOf('location.replace') > -1)
                         }
                         if (!isResponded) {
                             result.push({
