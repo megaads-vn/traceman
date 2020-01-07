@@ -103,11 +103,13 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 await page.goto(url);
                 // await page.close();
                 // await browser.close();
-                if (!isResponded) {
-                    console.log("resolve 110")
-                    console.log("url", url)
-                    resolve(result);
-                }
+                setTimeout(function(isResponded){
+                    if (!isResponded) {
+                        console.log("resolve 110")
+                        console.log("url", url)
+                        resolve(result);
+                    }
+                }, 25000);
 
             } catch (e) {
                 await page.close();
