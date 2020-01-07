@@ -103,17 +103,18 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 await page.goto(url);
                 await page.close();
                 await browser.close();
+                if (!isResponded) {
+                    console.log("resolve 110")
+                    console.log("url", url)
+                    // resolve(result);
+                }
 
             } catch (e) {
                 await page.close();
                 await browser.close();
                 reject(error);
             }
-            if (!isResponded) {
-                console.log("resolve 110")
-                console.log("url", url)
-                resolve(result);
-            }
+
         });
     }
     async function requestUsingCurl(url) {
