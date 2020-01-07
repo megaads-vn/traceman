@@ -88,10 +88,11 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                 console.log("contentType", contentType)
                                 console.log("isRedirect", isRedirect)
                                 isResponded = true;
+                                console.log("changing isResponded to true");
                                 console.log("resolve 91")
                                 resolve(result);
-                                page.close();
-                                browser.close();
+                                await page.close();
+                                await browser.close();
                             }
                         }
                     }
