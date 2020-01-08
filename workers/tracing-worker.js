@@ -11,11 +11,13 @@ function TracingWorker($config, $logger, $event, $gearman) {
     async function trace(inputs) {
         return new Promise(async function (resolve, reject) {
             var url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
-            $logger.debug("Request using CURL ...");
+            $logger.debug(`Requesting using CURL ... ${url}`);
             var result = await requestUsingCurl(url);
+            $logger.debug(`Request using CURL done ... ${url}`);
             if (result == null || result.length <= 2) {
-                $logger.debug("Request using Browser ...");
+                $logger.debug(`Requesting using browser  ... ${url}`);
                 result = await requestUsingBrowser(url);
+                $logger.debug(`Request using browser done ... ${url}`);
             }
             if ((result == null || result.length <= 2)
                 && inputs["location"] != null) {
@@ -56,6 +58,10 @@ function TracingWorker($config, $logger, $event, $gearman) {
         }
         return new Promise(async (resolve, reject) => {
             try {
+                setTimeout(function(isResponded){
+                    resolve([]);
+                }, 25000);
+
                 page.on('response', async (response) => {
                     const url = response.url();
                     const status = response.status();
@@ -67,7 +73,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                             let body = await response.text();
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
-                                    || body.toLowerCase().indexOf('window.location.replace') > -1)
+                                    || body.toLowerCase().indexOf('location.replace') > -1)
                         }
                         if (!isResponded) {
                             result.push({
@@ -84,25 +90,24 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                 )) {
                                 isResponded = true;
                                 resolve(result);
-                                page.close();
-                                browser.close();
+                                await page.close();
+                                await browser.close();
                             }
                         }
                     }
                 })
-                process.on('unhandledRejection', error => {
-                    // Do not log error when suddenly close browser!
-                });
+
                 await page.goto(url);
+                // await page.close();
+                // await browser.close();
+
 
             } catch (e) {
                 await page.close();
                 await browser.close();
                 reject(error);
             }
-            if (!isResponded) {
-                resolve(result);
-            }
+
         });
     }
     async function requestUsingCurl(url) {
@@ -112,7 +117,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
             exec(command, async function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
-                    reject(err);
+                    resolve([]);
+                    // reject(err);
                 }
                 var result = stdout.split("\n");
                 let destinationUrl;
