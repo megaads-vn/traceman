@@ -67,8 +67,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                             let body = await response.text();
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
-                                    || body.toLowerCase().indexOf('location.replace') > -1)
-                            console.log(`${url} is ${isRedirect} redirect`);
+                                    || body.toLowerCase().indexOf('window.location.replace') > -1)
                         }
                         if (!isResponded) {
                             result.push({
@@ -85,8 +84,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                 )) {
                                 isResponded = true;
                                 resolve(result);
-                                await page.close();
-                                await browser.close();
+                                page.close();
+                                browser.close();
                             }
                         }
                     }
@@ -95,20 +94,15 @@ function TracingWorker($config, $logger, $event, $gearman) {
                     // Do not log error when suddenly close browser!
                 });
                 await page.goto(url);
-                // await page.close();
-                // await browser.close();
-                setTimeout(function(isResponded){
-                    if (!isResponded) {
-                        resolve(result);
-                    }
-                }, 25000);
 
             } catch (e) {
                 await page.close();
                 await browser.close();
                 reject(error);
             }
-
+            if (!isResponded) {
+                resolve(result);
+            }
         });
     }
     async function requestUsingCurl(url) {
@@ -118,7 +112,6 @@ function TracingWorker($config, $logger, $event, $gearman) {
             exec(command, async function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
-                    resolve([]);
                     reject(err);
                 }
                 var result = stdout.split("\n");
