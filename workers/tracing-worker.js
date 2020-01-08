@@ -15,8 +15,9 @@ function TracingWorker($config, $logger, $event, $gearman) {
             var result = await requestUsingCurl(url);
             $logger.debug(`Request using CURL done ... ${url}`);
             if (result == null || result.length <= 2) {
-                $logger.debug("Request using Browser ...");
+                $logger.debug(`Requesting using browser  ... ${url}`);
                 result = await requestUsingBrowser(url);
+                $logger.debug(`Request using browser done ... ${url}`);
             }
             if ((result == null || result.length <= 2)
                 && inputs["location"] != null) {
@@ -69,7 +70,6 @@ function TracingWorker($config, $logger, $event, $gearman) {
                             isRedirect =
                                 (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
                                     || body.toLowerCase().indexOf('location.replace') > -1)
-                            console.log(`${url} is ${isRedirect} redirect`);
                         }
                         if (!isResponded) {
                             result.push({
