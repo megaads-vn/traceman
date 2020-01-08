@@ -11,8 +11,9 @@ function TracingWorker($config, $logger, $event, $gearman) {
     async function trace(inputs) {
         return new Promise(async function (resolve, reject) {
             var url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
-            $logger.debug("Request using CURL ...");
+            $logger.debug(`Requesting using CURL ... ${url}`);
             var result = await requestUsingCurl(url);
+            $logger.debug(`Request using CURL done ... ${url}`);
             if (result == null || result.length <= 2) {
                 $logger.debug("Request using Browser ...");
                 result = await requestUsingBrowser(url);
