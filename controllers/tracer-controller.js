@@ -1,10 +1,16 @@
 module.exports = TracerController;
-var RateLimiter = require('limiter').RateLimiter;
+var RateLimiter = require("limiter").RateLimiter;
 var requestLimiter = new RateLimiter(1, 1000);
 const Cache = require("cache");
 var cache = new Cache(1800 * 1000);
+const Queue = require(__dir + "/libs/queue");
+const Trace = require(__dir + "/libs/request/trace");
+const queueLimitNumber = 8;
+const TraceQueue = new Queue(queueLimitNumber);
+
 
 function TracerController($config, $event, $logger, $gearman) {
+
     this.redirection = function (io) {
         ((io) => {
             if (!io.inputs["url"]) {
@@ -45,4 +51,38 @@ function TracerController($config, $event, $logger, $gearman) {
             });
         });
     }
+
+    this.curl = async function(io) {
+        if (!io.inputs["url"]) {
+            io.json("Url required!");
+            return;
+        }
+        let url = io.inputs["url"];
+        let location = io.inputs["location"];
+        let proxyUrl = "";
+        if (location != null) {
+            let proxyConfig = $config.get("proxies." + location, null);
+            if (proxyConfig != null) {
+                let proxyDomain = proxyConfig.url;
+                proxyDomain = proxyDomain.replace("http://", "");
+                proxyUrl = "http://" + proxyConfig.username + ":" + proxyConfig.password + "@" + proxyDomain;
+
+            }
+        }
+        let task = () => {
+            return Trace.curl(url, proxyUrl).then(function (data) {
+                return function() {
+                    io.json(data);
+                }
+            }).catch((e) => {
+                console.log("curl err ", e);
+                io.json({
+                    "status": "fail"
+                });
+                Promise.resolve();
+            });
+        };
+        TraceQueue.pushTask(task);
+    }
+
 }
