@@ -58,6 +58,10 @@ function TracingWorker($config, $logger, $event, $gearman) {
         }
         return new Promise(async (resolve, reject) => {
             try {
+                setTimeout(function(isResponded){
+                    resolve([]);
+                }, 25000);
+
                 page.on('response', async (response) => {
                     const url = response.url();
                     const status = response.status();
@@ -96,11 +100,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 await page.goto(url);
                 // await page.close();
                 // await browser.close();
-                setTimeout(function(isResponded){
-                    if (!isResponded) {
-                        resolve(result);
-                    }
-                }, 25000);
+
 
             } catch (e) {
                 await page.close();
