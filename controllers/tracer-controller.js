@@ -14,7 +14,10 @@ function TracerController($config, $event, $logger, $gearman) {
     this.redirection = function (io) {
         ((io) => {
             if (!io.inputs["url"]) {
-                io.json("Url required!");
+                io.json({
+                    "status" => "fail",
+                    "message" => "Url required!"
+                });
                 return;
             }
             var cachedResult = cache.get(io.inputs["url"]);
@@ -27,7 +30,7 @@ function TracerController($config, $event, $logger, $gearman) {
     }
     function queueJob(io) {
         var job = $gearman.submitJob("tracer:redirection", JSON.stringify(io.inputs));
-        job.setTimeout(1 * 60 * 1000); // timeout in 0.6 minutes       
+        job.setTimeout(1 * 60 * 1000); // timeout in 0.6 minutes
         job.on("data", function (data) {
             var result = JSON.parse(data);
             if (result != null && result.length > 0) {
