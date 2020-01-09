@@ -15,8 +15,8 @@ function TracerController($config, $event, $logger, $gearman) {
         ((io) => {
             if (!io.inputs["url"]) {
                 io.json({
-                    "status" => "fail",
-                    "message" => "Url required!"
+                    "status" : "fail",
+                    "message" : "Url required!"
                 });
                 return;
             }

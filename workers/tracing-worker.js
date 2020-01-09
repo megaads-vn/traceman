@@ -105,8 +105,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 await browser.close();
                 $logger.debug(`Request using browser timeout ${url}`);
                 reject({
-                    "status" => 'fail',
-                    "message" => "Request using browser timeout, can not tracing."
+                    "status" : 'fail',
+                    "message" : "Request using browser timeout, can not tracing."
                 });
 
 
