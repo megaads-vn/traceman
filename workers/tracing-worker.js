@@ -19,7 +19,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 }
                 $logger.debug("Request using Browser via proxy ...");
                 result = await requestUsingBrowser(url, proxyConfig);
-            } else if (inputs["location"] == null || result == null) {
+            }
+            if (inputs["location"] == null || result == null || result.length == 0) {
                 $logger.debug(`Requesting using CURL ... ${url}`);
                 result = await requestUsingCurl(url);
                 $logger.debug(`Request using CURL done ... ${url}`);
