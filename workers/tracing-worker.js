@@ -11,22 +11,23 @@ function TracingWorker($config, $logger, $event, $gearman) {
     async function trace(inputs) {
         return new Promise(async function (resolve, reject) {
             var url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
-            $logger.debug(`Requesting using CURL ... ${url}`);
-            var result = await requestUsingCurl(url);
-            $logger.debug(`Request using CURL done ... ${url}`);
-            if (result == null || result.length <= 2) {
-                $logger.debug(`Requesting using browser  ... ${url}`);
-                result = await requestUsingBrowser(url);
-                $logger.debug(`Request using browser done ... ${url}`);
-            }
-            if ((result == null || result.length <= 2)
-                && inputs["location"] != null) {
+            var result = null;
+            if (inputs["location"] != null) {
                 var proxyConfig = $config.get("proxies." + inputs["location"], null);
                 if (proxyConfig == null) {
                     proxyConfig = $config.get("proxies.default");
                 }
                 $logger.debug("Request using Browser via proxy ...");
                 result = await requestUsingBrowser(url, proxyConfig);
+            } else if (inputs["location"] == null || result == null) {
+                $logger.debug(`Requesting using CURL ... ${url}`);
+                result = await requestUsingCurl(url);
+                $logger.debug(`Request using CURL done ... ${url}`);
+                if ((result == null || result.length <= 2) && inputs["location"] == null) {
+                    $logger.debug(`Requesting using browser  ... ${url}`);
+                    result = await requestUsingBrowser(url);
+                    $logger.debug(`Request using browser done ... ${url}`);
+                }
             }
             resolve(result);
         });
