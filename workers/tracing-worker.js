@@ -99,8 +99,16 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 })
 
                 await page.goto(url);
-                // await page.close();
-                // await browser.close();
+                await new Promise((res) => {
+                    setTimeout(res, 25 * 1000)
+                });
+                await page.close();
+                await browser.close();
+                $logger.debug(`Request using browser timeout ${url}`);
+                reject({
+                    "status" : 'fail',
+                    "message" : "Request using browser timeout, can not tracing."
+                });
 
 
             } catch (e) {
