@@ -30,7 +30,6 @@ function TracerController($config, $event, $logger, $gearman) {
     }
     function queueJob(io) {
         var job = $gearman.submitJob("tracer:redirection", JSON.stringify(io.inputs));
-        job.setTimeout(1 * 60 * 1000); // timeout in 0.6 minutes
         job.on("data", function (data) {
             var result = JSON.parse(data);
             if (result != null && result.length > 0) {
