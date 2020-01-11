@@ -76,11 +76,14 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                     || body.toLowerCase().indexOf('location.replace') > -1)
                         }
                         if (!isResponded) {
-                            result.push({
-                                "url": url,
-                                "status": status,
-                                "contentType": contentType,
-                            });
+                            if (page.mainFrame().url() == url || page.mainFrame().url() == 'about:blank') {
+                                // Do not push iframe response to result
+                                result.push({
+                                    "url": url,
+                                    "status": status,
+                                    "contentType": contentType,
+                                });
+                            }
                             if (status == 405 || status == 403
                                 || (
                                     status == 200
