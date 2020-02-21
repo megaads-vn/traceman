@@ -9,15 +9,16 @@
     "contributors": [],
     "repository": {},
     "dependencies": {
+        "cache": "*",
         "crypto": "*",
         "ejs": "2.*",
+        "ip2location-nodejs": "^8.3.0",
+        "limiter": "*",
         "lru-cache": "4.*",
+        "node-gearman": "*",
         "proxy-chain": "^0.2.5",
         "puppeteer": "*",
         "socket.io": "2.*",
-        "url-pattern": "1.*",
-        "limiter": "*",
-        "cache": "*",
-        "node-gearman": "*"
+        "url-pattern": "1.*"
     }
 }

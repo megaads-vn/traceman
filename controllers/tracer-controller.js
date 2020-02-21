@@ -7,9 +7,20 @@ const Queue = require(__dir + "/libs/queue");
 const Trace = require(__dir + "/libs/request/trace");
 const queueLimitNumber = 8;
 const TraceQueue = new Queue(queueLimitNumber);
-
+var ip2loc = require('ip2location-nodejs');
+ip2loc.IP2Location_init(__dir + '/ip2location/IPV6-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE.BIN');
 
 function TracerController($config, $event, $logger, $gearman) {
+    function getCallerIP(request) {
+        var ip = request.headers["x-forwarded-for"] ||
+            request.connection.remoteAddress ||
+            request.socket.remoteAddress ||
+            request.connection.socket.remoteAddress;
+        ip = ip.split(',')[0];
+        ip = ip.split(':').slice(-1); //in case the ip returned in a format: "::ffff:146.xxx.xxx.xxx"
+
+        return ip[0];
+    }
 
     this.redirection = function (io) {
         ((io) => {
@@ -24,6 +35,20 @@ function TracerController($config, $event, $logger, $gearman) {
             if (cachedResult != null) {
                 io.json(cachedResult);
             } else {
+                if (io.inputs["location"] && io.inputs["location"] == "auto") {
+                    var url = new URL(io.inputs["url"]);
+                    let domain = url.hostname;
+                    let cacheLocation = cache.get('location::' + domain);
+                    if (cacheLocation != null) {
+                        io.inputs["location"] = cacheLocation;
+                    } else {
+                        let ip = getCallerIP(io.request);
+                        ip = ip2loc.IP2Location_get_all(ip);
+                        let countryCode = ip.country_short.toLowerCase();
+                        cache.put('location::' + domain, countryCode);
+                        io.inputs["location"] = countryCode;
+                    }
+                }
                 queueJob(io);
             }
         })(io);
