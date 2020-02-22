@@ -17,7 +17,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 if (proxyConfig == null) {
                     proxyConfig = $config.get("proxies.default");
                 }
-                $logger.debug("Request using Browser via proxy ...");
+                $logger.debug("Request using Browser via proxy ...", proxyConfig);
                 result = await requestUsingBrowser(url, proxyConfig);
             }
             if (inputs["location"] == null || result == null || result.length == 0) {
