@@ -9,21 +9,23 @@ const queueLimitNumber = 8;
 const TraceQueue = new Queue(queueLimitNumber);
 var ip2loc = require('ip2location-nodejs');
 ip2loc.IP2Location_init(__dir + '/ip2location/IPV6-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE.BIN');
+const dns = require('dns');
 
 function TracerController($config, $event, $logger, $gearman) {
-    function getCallerIP(request) {
-        var ip = request.headers["x-forwarded-for"] ||
-            request.connection.remoteAddress ||
-            request.socket.remoteAddress ||
-            request.connection.socket.remoteAddress;
-        ip = ip.split(',')[0];
-        ip = ip.split(':').slice(-1); //in case the ip returned in a format: "::ffff:146.xxx.xxx.xxx"
-
-        return ip[0];
+    function getIp(domain) {
+        return new Promise((resolve, reject) => {
+            dns.lookup(domain, (err, address, family) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(address);
+                }
+            });
+        });
     }
 
     this.redirection = function (io) {
-        ((io) => {
+        (async (io) => {
             if (!io.inputs["url"]) {
                 io.json({
                     "status" : "fail",
@@ -36,14 +38,14 @@ function TracerController($config, $event, $logger, $gearman) {
                 io.json(cachedResult);
             } else {
                 if (io.inputs["location"] && io.inputs["location"] == "auto") {
-                    var url = new URL(io.inputs["url"]);
+                    var url = new URL(io.inputs["target_url"]);
                     let domain = url.hostname;
                     let cacheLocation = cache.get('location::' + domain);
                     if (cacheLocation != null) {
                         io.inputs["location"] = cacheLocation;
                     } else {
-                        let ip = getCallerIP(io.request);
-                        ip = ip2loc.IP2Location_get_all(ip);
+                        let address = await getIp(domain);
+                        let ip = ip2loc.IP2Location_get_all(address);
                         let countryCode = ip.country_short.toLowerCase();
                         cache.put('location::' + domain, countryCode);
                         io.inputs["location"] = countryCode;
