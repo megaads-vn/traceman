@@ -38,7 +38,7 @@ function TracerController($config, $event, $logger, $gearman) {
                 io.json(cachedResult);
             } else {
                 if (io.inputs["location"] && io.inputs["location"] == "auto") {
-                    var url = new URL(io.inputs["target_url"]);
+                    var url = new URL(decodeURIComponent(io.inputs["target_url"]));
                     let domain = url.hostname;
                     let cacheLocation = cache.get('location::' + domain);
                     if (cacheLocation != null) {
