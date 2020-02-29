@@ -62,7 +62,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
             try {
                 setTimeout(function(isResponded){
                     resolve([]);
-                }, 25000);
+                }, 30000);
 
                 page.on('response', async (response) => {
                     const url = response.url();
@@ -78,7 +78,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                                     || body.toLowerCase().indexOf('location.replace') > -1)
                         }
                         if (!isResponded) {
-                            if (page.mainFrame().url() == url || page.mainFrame().url() == 'about:blank') {
+                            if (page.mainFrame().url() == url || page.mainFrame().url() == 'about:blank' || status != 200) {
                                 // Do not push iframe response to result
                                 result.push({
                                     "url": url,
@@ -104,7 +104,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
 
                 await page.goto(url);
                 await new Promise((res) => {
-                    setTimeout(res, 25 * 1000)
+                    setTimeout(res, 30 * 1000)
                 });
                 await page.close();
                 await browser.close();
