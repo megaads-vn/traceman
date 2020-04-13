@@ -106,7 +106,8 @@ function TracerController($config, $event, $logger, $gearman) {
             }).catch((e) => {
                 console.log("curl err ", e);
                 io.json({
-                    "status": "fail"
+                    "status": "fail",
+                    "msg": e
                 });
                 Promise.resolve();
             });
