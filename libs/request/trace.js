@@ -34,16 +34,30 @@ module.exports.curl = async function(url, proxy = '') {
                     "status": parseStatusCode(result[0]),
                     "url": url
                 });
-                for (let index = 1; index < result.length - 1; index = index + 2) {
-                    var statusCode = parseStatusCode(result[index + 1]);
-                    if (statusCode == null) {
-                        break;
+                let urlIndex = 0;
+                let destinationUrl, statusCode;
+                for (let index = 0; index < result.length - 1; index++) {
+                    let line = result[index];
+                    if (!line) {
+                        continue;
                     }
-                    retval.push({
-                        "url": result[index].replace("Location: ", "").replace("\r", ""),
-                        "status": statusCode
-                    });
+                    if (line.includes('HTTP')) {
+                        statusCode = parseStatusCode(line);
+                        if (destinationUrl) {
+                            retval[urlIndex] = {
+                                "status": statusCode,
+                                "url": destinationUrl
+                            };
+                        }
+
+                    } else if (line.includes('ocation')) {
+                        urlIndex++;
+                        destinationUrl = line.replace("Location: ", "")
+                            .replace("location: ", "")
+                            .replace("\r", "");
+                    }
                 }
+
             }
             resolve(retval);
         });
