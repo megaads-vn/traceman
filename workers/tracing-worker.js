@@ -12,23 +12,22 @@ function TracingWorker($config, $logger, $event, $gearman) {
         return new Promise(async function (resolve, reject) {
             var url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
             var result = null;
+            var proxyConfig = null;
             if (inputs["location"] != null) {
-                var proxyConfig = $config.get("proxies." + inputs["location"], null);
+                 proxyConfig = $config.get("proxies." + inputs["location"], null);
                 if (proxyConfig == null) {
                     proxyConfig = $config.get("proxies.default");
                 }
-                $logger.debug("Request using Browser via proxy ...", proxyConfig);
-                result = await requestUsingBrowser(url, proxyConfig);
+                $logger.debug("Request using via proxy ...", proxyConfig);
+
             }
-            if (inputs["location"] == null || result == null || result.length == 0) {
-                $logger.debug(`Requesting using CURL ... ${url}`);
-                result = await requestUsingCurl(url);
-                $logger.debug(`Request using CURL done ... ${url}`);
-                if ((result == null || result.length <= 2) && inputs["location"] == null) {
-                    $logger.debug(`Requesting using browser  ... ${url}`);
-                    result = await requestUsingBrowser(url);
-                    $logger.debug(`Request using browser done ... ${url}`);
-                }
+            $logger.debug(`Requesting using CURL ... ${url}`);
+            result = await requestUsingCurl(url, proxyConfig);
+            $logger.debug(`Request using CURL done ... ${url}`);
+            if ((result == null || result.length <= 2) && inputs["location"] == null) {
+                $logger.debug(`Requesting using browser  ... ${url}`);
+                result = await requestUsingBrowser(url, proxyConfig);
+                $logger.debug(`Request using browser done ... ${url}`);
             }
             resolve(result);
         });
@@ -123,10 +122,18 @@ function TracingWorker($config, $logger, $event, $gearman) {
 
         });
     }
-    async function requestUsingCurl(url) {
+    async function requestUsingCurl(url, proxyConfig) {
         var retval = [];
         return new Promise((resolve, reject) => {
-            let command = `curl -v -s -L -D - '${url}' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' --max-time 8 -o /dev/null -w '%{url_effective}' | egrep 'Location|HTTP/' -i`;
+            let command = `curl -v -s -L -D - '${url}' -H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,ja;' --max-time 8 -o /dev/null -w '%{url_effective}'`;
+            if (proxyConfig != null) {
+                let proxyDomain = proxyConfig.url;
+                proxyDomain = proxyDomain.replace("http://", "");
+                let proxyUrl = "http://" + proxyConfig.username + ":" + proxyConfig.password + "@" + proxyDomain;
+                command += " --proxy " + proxyUrl;
+
+            }
+            command += " | egrep 'Location|HTTP/' -i";
             exec(command, async function (err, stdout, stderr) {
                 if (err) {
                     console.log("requestUsingCurl err", err);
@@ -134,7 +141,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
                     // reject(err);
                 }
                 var result = stdout.split("\n");
-                let destinationUrl;
+                let destinationUrl, statusCode;
                 if (result.length == 2) {
                     if (parseStatusCode(result[0]) >= 400) {
                         resolve(retval);
@@ -149,18 +156,27 @@ function TracingWorker($config, $logger, $event, $gearman) {
                         "status": parseStatusCode(result[0]),
                         "url": url
                     });
-                    for (let index = 1; index < result.length - 1; index = index + 2) {
-                        var statusCode = parseStatusCode(result[index + 1]);
-                        if (statusCode == null) {
-                            break;
+                    let urlIndex = 0;
+                    for (let index = 0; index < result.length - 1; index++) {
+                        let line = result[index];
+                        if (!line) {
+                            continue;
                         }
-                        destinationUrl = result[index].replace("Location: ", "")
-                            .replace("location: ", "")
-                            .replace("\r", "");
-                        retval.push({
-                            "url": destinationUrl,
-                            "status": statusCode
-                        });
+                        if (line.includes('HTTP')) {
+                            statusCode = parseStatusCode(line);
+                            if (destinationUrl) {
+                                retval[urlIndex] = {
+                                    "status": statusCode,
+                                    "url": destinationUrl
+                                };
+                            }
+
+                        } else if (line.includes('ocation')) {
+                            urlIndex++;
+                            destinationUrl = line.replace("Location: ", "")
+                                .replace("location: ", "")
+                                .replace("\r", "");
+                        }
                     }
                 }
                 // Check redirect if status code 200 and redirect using JS
