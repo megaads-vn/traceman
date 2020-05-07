@@ -7,6 +7,7 @@ const Queue = require(__dir + "/libs/queue");
 const Trace = require(__dir + "/libs/request/trace");
 const queueLimitNumber = 8;
 const TraceQueue = new Queue(queueLimitNumber);
+const RedirectionQueue = new Queue(3);
 var ip2loc = require('ip2location-nodejs');
 ip2loc.IP2Location_init(__dir + '/ip2location/IPV6-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE.BIN');
 const dns = require('dns');
@@ -24,61 +25,77 @@ function TracerController($config, $event, $logger, $gearman) {
         });
     }
 
-    this.redirection = function (io) {
-        (async (io) => {
-            if (!io.inputs["url"]) {
-                io.json({
-                    "status" : "fail",
-                    "message" : "Url required!"
-                });
-                return;
-            }
-            var cachedResult = cache.get(io.inputs["url"]);
-            if (cachedResult != null) {
-                io.json(cachedResult);
-            } else {
-                if (io.inputs["location"] && io.inputs["location"] == "auto") {
-                    var url = new URL(decodeURIComponent(io.inputs["target_url"]));
-                    let domain = url.hostname;
-                    let cacheLocation = cache.get('location::' + domain);
-                    if (cacheLocation != null) {
-                        io.inputs["location"] = cacheLocation;
-                    } else {
-                        let address = await getIp(domain);
-                        let ip = ip2loc.IP2Location_get_all(address);
-                        let countryCode = ip.country_short.toLowerCase();
-                        cache.put('location::' + domain, countryCode);
-                        io.inputs["location"] = countryCode;
-                    }
+    this.redirection = async function (io) {
+        if (!io.inputs["url"]) {
+            io.json({
+                "status" : "fail",
+                "message" : "Url required!"
+            });
+            return;
+        }
+        var cachedResult = cache.get(io.inputs["url"]);
+        if (cachedResult != null) {
+            io.json(cachedResult);
+        } else {
+            if (io.inputs["location"] && io.inputs["location"] == "auto") {
+                var url = new URL(decodeURIComponent(io.inputs["target_url"]));
+                let domain = url.hostname;
+                let cacheLocation = cache.get('location::' + domain);
+                if (cacheLocation != null) {
+                    io.inputs["location"] = cacheLocation;
+                } else {
+                    let address = await getIp(domain);
+                    let ip = ip2loc.IP2Location_get_all(address);
+                    let countryCode = ip.country_short.toLowerCase();
+                    cache.put('location::' + domain, countryCode);
+                    io.inputs["location"] = countryCode;
                 }
-                queueJob(io);
             }
-        })(io);
+            queueJob(io);
+        }
     }
+
     function queueJob(io) {
-        var job = $gearman.submitJob("tracer:redirection", JSON.stringify(io.inputs));
-        job.on("data", function (data) {
-            var result = JSON.parse(data);
-            if (result != null && result.length > 0) {
-                cache.put(io.inputs["url"], result);
+        let task = () => {
+            return hybridRequest(io.inputs).then(function (data) {
+                if (data != null && data.length > 0) {
+                    cache.put(io.inputs["url"], data);
+                }
+                io.json(data);
+            }).catch((e) => {
+                console.log("curl err ", e);
+                io.json({
+                    "status": "fail",
+                    "msg": e
+                });
+                Promise.resolve();
+            });
+        };
+        RedirectionQueue.pushTask(task);
+    }
+
+    async function hybridRequest(inputs) {
+        let url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(inputs["url"]))));
+        let result = null;
+        let proxyConfig = null;
+        let location = inputs["location"];
+        let onlyCurl = inputs["onlyCurl"] ? 1 : 0;
+        if (location) {
+            proxyConfig = $config.get("proxies." + inputs["location"], null);
+            if (proxyConfig == null) {
+                proxyConfig = $config.get("proxies.default");
             }
-            io.json(result);
-        });
-        job.on("end", function () {
-            $logger.debug("Job completed!");
-        });
-        job.on("error", function (error) {
-            $logger.debug("Job failed!", io.inputs["url"]);
-            io.json({
-                "status": "fail"
-            });
-        });
-        job.on("timeout", function () {
-            $logger.debug("Job timeout!", io.inputs["url"]);
-            io.json({
-                "status": "fail"
-            });
-        });
+            $logger.debug("Request using via proxy ...", proxyConfig);
+        }
+        $logger.debug(`Requesting using CURL ... ${url}`);
+        result = await Trace.curl(url, proxyConfig);
+        $logger.debug(`Request using CURL done ... ${url}`);
+        if ((result == null || result.length <= 2) && !onlyCurl) {
+            $logger.debug(`Requesting using browser  ... ${url}`);
+            result = await Trace.browser(url, proxyConfig);
+            $logger.debug(`Request using browser done ... ${url}`);
+        }
+        return result;
     }
 
     this.curl = async function(io) {
@@ -88,18 +105,12 @@ function TracerController($config, $event, $logger, $gearman) {
         }
         let url = io.inputs["url"];
         let location = io.inputs["location"];
-        let proxyUrl = "";
+        let proxyConfig = "";
         if (location != null) {
-            let proxyConfig = $config.get("proxies." + location, null);
-            if (proxyConfig != null) {
-                let proxyDomain = proxyConfig.url;
-                proxyDomain = proxyDomain.replace("http://", "");
-                proxyUrl = "http://" + proxyConfig.username + ":" + proxyConfig.password + "@" + proxyDomain;
-
-            }
+            proxyConfig = $config.get("proxies." + location, null);
         }
         let task = () => {
-            return Trace.curl(url, proxyUrl).then(function (data) {
+            return Trace.curl(url, proxyConfig).then(function (data) {
                 return function() {
                     io.json(data);
                 }
@@ -114,5 +125,6 @@ function TracerController($config, $event, $logger, $gearman) {
         };
         TraceQueue.pushTask(task);
     }
+
 
 }
