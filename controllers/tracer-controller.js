@@ -56,6 +56,7 @@ function TracerController($config, $event, $logger, $gearman) {
     }
 
     function queueJob(io) {
+        let priority = io.inputs["priority"] ? 1 : 0;
         let task = () => {
             return hybridRequest(io.inputs).then(function (data) {
                 if (data != null && data.length > 0) {
@@ -71,7 +72,7 @@ function TracerController($config, $event, $logger, $gearman) {
                 Promise.resolve();
             });
         };
-        RedirectionQueue.pushTask(task);
+        RedirectionQueue.pushTask(task, priority);
     }
 
     async function hybridRequest(inputs) {
@@ -87,6 +88,7 @@ function TracerController($config, $event, $logger, $gearman) {
             }
             $logger.debug("Request using via proxy ...", proxyConfig);
         }
+        $logger.debug(`Inputs ... `, inputs);
         $logger.debug(`Requesting using CURL ... ${url}`);
         result = await Trace.curl(url, proxyConfig);
         $logger.debug(`Request using CURL done ... ${url}`);

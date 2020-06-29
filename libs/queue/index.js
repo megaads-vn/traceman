@@ -8,8 +8,13 @@ module.exports = class Queue {
         this.queue = [];
     }
 
-    pushTask(task) {
-        this.queue.push(task);
+    pushTask(task, priority = false) {
+        if (priority) {
+            this.queue.unshift(task);
+        } else {
+            this.queue.push(task);
+
+        }
         this.next();
     }
 

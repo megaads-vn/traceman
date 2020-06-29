@@ -122,7 +122,7 @@ module.exports.browser = async function (url, proxyConfig) {
         try {
             setTimeout(function(isResponded){
                 resolve([]);
-            }, 30000);
+            }, 35000);
 
             page.on('response', async (response) => {
                 const url = response.url();
@@ -160,7 +160,7 @@ module.exports.browser = async function (url, proxyConfig) {
                         }
                     }
                 }
-            })
+            });
 
             await page.goto(url);
             await new Promise((res) => {
@@ -178,7 +178,7 @@ module.exports.browser = async function (url, proxyConfig) {
         } catch (e) {
             await page.close();
             await browser.close();
-            reject(error);
+            reject(e);
         }
 
     });
