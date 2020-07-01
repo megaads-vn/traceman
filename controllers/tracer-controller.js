@@ -77,7 +77,10 @@ function TracerController($config, $event, $logger, $gearman) {
         let result = null;
         let proxyConfig = null;
         let location = inputs["location"];
-        let onlyCurl = inputs["onlyCurl"] ? 1 : 0;
+        let onlyCurl = inputs["only_curl"] ? 1 : 0;
+        let onlyBrowser = inputs["only_browser"] ? 1 : 0;
+
+
         if (location) {
             proxyConfig = $config.get("proxies." + inputs["location"], null);
             if (proxyConfig == null) {
@@ -86,9 +89,12 @@ function TracerController($config, $event, $logger, $gearman) {
             $logger.debug("Request using via proxy ...", proxyConfig);
         }
         $logger.debug(`Inputs ... `, inputs);
-        $logger.debug(`Requesting using CURL ... ${url}`);
-        result = await Trace.curl(url, proxyConfig);
-        $logger.debug(`Request using CURL done ... ${url}`);
+        if (!onlyBrowser) {
+            $logger.debug(`Requesting using CURL ... ${url}`);
+            result = await Trace.curl(url, proxyConfig);
+            $logger.debug(`Request using CURL done ... ${url}`);
+        }
+
         if ((result == null || result.length <= 2) && !onlyCurl) {
             $logger.debug(`Requesting using browser  ... ${url}`);
             result = await Trace.browser(url, proxyConfig);
