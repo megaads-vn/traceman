@@ -5,7 +5,7 @@ const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/5
 module.exports.curl = function(url, proxyConfig = null) {
     var retval = [];
     return new Promise((resolve, reject) => {
-        setTimeout(function(isResponded){
+        var timeOut = setTimeout(function(isResponded){
             console.log('DEBUG curl return', url);
             resolve([]);
         }, 30000);
@@ -25,7 +25,6 @@ module.exports.curl = function(url, proxyConfig = null) {
             curlCommand += " --proxy " + proxyUrl;
         }
         curlCommand += " | egrep 'Location|HTTP/'";
-        console.log(curlCommand);
         exec(curlCommand, async function (err, stdout, stderr) {
             if (err) {
                 console.log('DEBUG curl err', err);
@@ -48,6 +47,7 @@ module.exports.curl = function(url, proxyConfig = null) {
                 resolve([]);
             }
             resolve(retval);
+            clearTimeout(timeOut);
         });
     });
 }
