@@ -17,7 +17,7 @@ module.exports.curl = function(url, proxyConfig = null) {
             "-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3' " +
             "-H 'Accept-Encoding: gzip, deflate' " +
             "-H 'Accept-Language:" +
-            " en-US,en;q=0.9,ja;q=0.8,vi;q=0.7' --max-time 8 -o /dev/null -w '%{url_effective}'";
+            " en-US,en;q=0.9,ja;q=0.8,vi;q=0.7' --max-time 15 -o /dev/null -w '%{url_effective}'";
         if(proxyConfig) {
             let proxyDomain = proxyConfig.url;
             proxyDomain = proxyDomain.replace("http://", "");
@@ -25,9 +25,11 @@ module.exports.curl = function(url, proxyConfig = null) {
             curlCommand += " --proxy " + proxyUrl;
         }
         curlCommand += " | egrep 'Location|HTTP/'";
+        console.log(curlCommand);
         exec(curlCommand, async function (err, stdout, stderr) {
             if (err) {
-                reject(err);
+                console.log('DEBUG curl err', err);
+                resolve([]);
             }
             try {
                 let responseData = parseCurlResponse(url, stdout);
@@ -42,7 +44,8 @@ module.exports.curl = function(url, proxyConfig = null) {
                     }
                 }
             } catch (e) {
-                reject(err);
+                console.log('DEBUG curl catch err', e);
+                resolve([]);
             }
             resolve(retval);
         });
