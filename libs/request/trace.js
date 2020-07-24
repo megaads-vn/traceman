@@ -5,6 +5,10 @@ const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/5
 module.exports.curl = function(url, proxyConfig = null) {
     var retval = [];
     return new Promise((resolve, reject) => {
+        setTimeout(function(isResponded){
+            console.log('DEBUG curl return', url);
+            resolve([]);
+        }, 30000);
         url = decodeURIComponent(decodeURIComponent(decodeURIComponent(decodeURIComponent(url))));
         let curlCommand = "curl --head -s -L -D - '" + url + "' " +
             "-H 'Connection: keep-alive' " +
