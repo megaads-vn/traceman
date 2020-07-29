@@ -7,7 +7,7 @@ const Queue = require(__dir + "/libs/queue");
 const Trace = require(__dir + "/libs/request/trace");
 const queueLimitNumber = 8;
 const TraceQueue = new Queue(queueLimitNumber);
-const RedirectionQueue = new Queue(3);
+const RedirectionQueue = new Queue(8);
 var ip2loc = require('ip2location-nodejs');
 ip2loc.IP2Location_init(__dir + '/ip2location/IPV6-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE.BIN');
 const dns = require('dns');
