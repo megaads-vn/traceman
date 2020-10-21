@@ -128,7 +128,7 @@ module.exports.browser = async function (url, proxyConfig) {
     return new Promise(async (resolve, reject) => {
         try {
             setTimeout(function(isResponded){
-                resolve([]);
+                resolve(result);
             }, 35000);
 
             page.on('response', async (response) => {
@@ -140,9 +140,8 @@ module.exports.browser = async function (url, proxyConfig) {
                     let isRedirect = false;
                     if (status == 200) {
                         let body = await response.text();
-                        isRedirect =
-                            (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
-                                || body.toLowerCase().indexOf('location.replace') > -1)
+                        isRedirect = (body.toLowerCase().indexOf('http-equiv="refresh"') > -1
+                                        || body.toLowerCase().indexOf('location.replace') > -1)
                     }
                     if (!isResponded) {
                         if (page.mainFrame().url() == url || page.mainFrame().url() == 'about:blank' || status != 200) {
