@@ -77,10 +77,7 @@ function TracerController($config, $event, $logger, $gearman) {
         let result = null;
         let proxyConfig = null;
         let location = inputs["location"];
-        let onlyCurl = inputs["only_curl"] ? 1 : 0;
-        let onlyBrowser = inputs["only_browser"] ? 1 : 0;
-
-
+        let requestFlow = buildRequestFlow(inputs);
         if (location) {
             proxyConfig = $config.get("proxies." + inputs["location"], null);
             if (proxyConfig == null) {
@@ -89,16 +86,41 @@ function TracerController($config, $event, $logger, $gearman) {
             $logger.debug("Request using via proxy ...", proxyConfig);
         }
         $logger.debug(`Inputs ... `, inputs);
-        if (!onlyBrowser) {
-            $logger.debug(`Requesting using CURL ... ${url}`);
-            result = await Trace.curl(url, proxyConfig);
-            $logger.debug(`Request using CURL done ... ${url}`);
+        for (let i = 0; i < requestFlow.length; i++) {
+            let requestType = requestFlow[i];
+            //requestType == 'browser' && result.length <= 2 do code cũ check
+            if (!result || (requestType == 'browser' && result.length <= 2)) {
+                $logger.debug(`Requesting using ${requestType} ... ${url}`);
+                result = await requestHandle(url, proxyConfig, requestType);
+                $logger.debug(`Request using ${requestType} done ... ${url}`);
+            }
         }
 
-        if ((result == null || result.length <= 2) && !onlyCurl) {
-            $logger.debug(`Requesting using browser  ... ${url}`);
+        return result;
+    }
+
+    function buildRequestFlow(inputs) {
+        let requestFlow = ['curl', 'browser'];
+        let onlyCurl = inputs["only_curl"] ? 1 : 0;
+        let requestTypes = inputs["request_types"] ? decodeURIComponent(inputs["request_types"]) : null;
+        let onlyBrowser = inputs["only_browser"] ? 1 : 0;
+        if (onlyCurl) {
+            requestFlow = ['curl'];
+        } else if (onlyBrowser) {
+            requestFlow = ['browser'];
+        } else if (requestTypes) {
+            requestFlow = requestTypes.split(',');
+        }
+        return requestFlow;
+    }
+
+
+    async function requestHandle(url, proxyConfig, requestType) {
+        let result = null;
+        if (requestType == 'curl') {
+            result = await Trace.curl(url, proxyConfig);
+        } else if (requestType == 'browser') {
             result = await Trace.browser(url, proxyConfig);
-            $logger.debug(`Request using browser done ... ${url}`);
         }
         return result;
     }
