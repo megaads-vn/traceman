@@ -128,7 +128,7 @@ module.exports.browser = async function (url, proxyConfig) {
     return new Promise(async (resolve, reject) => {
         try {
             setTimeout(function(isResponded){
-                resolve(null);
+                resolve([]);
             }, 35000);
 
             page.on('response', async (response) => {
@@ -176,7 +176,7 @@ module.exports.browser = async function (url, proxyConfig) {
             await browser.close();
             $logger.debug(`Request using browser timeout ${url}`);
             $logger.debug(`Request using browser timeout, can not tracing ${url}`);
-            resolve(null);
+            resolve([]);
 
 
         } catch (e) {
