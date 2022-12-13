@@ -2,7 +2,7 @@ var exec = require('child_process').exec;
 const puppeteer = require('puppeteer');
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36";
 
-module.exports.curl = function(url, proxyConfig = null) {
+module.exports.curl = function(url, proxyConfig = null, headers = {}) {
     var retval = [];
     return new Promise((resolve, reject) => {
         var timeOut = setTimeout(function(isResponded){
@@ -18,6 +18,10 @@ module.exports.curl = function(url, proxyConfig = null) {
             "-H 'Accept-Encoding: gzip, deflate' " +
             "-H 'Accept-Language:" +
             " en-US,en;q=0.9,ja;q=0.8,vi;q=0.7' --max-time 15 -o /dev/null -w '%{url_effective}'";
+        for (const headerKey in headers) {
+            const headerValue = headers[headerKey];
+            curlCommand += "-H '" + headerKey + ": " + headerValue + "' ";
+        }
         if(proxyConfig) {
             let proxyDomain = proxyConfig.url;
             proxyDomain = proxyDomain.replace("http://", "");
@@ -100,7 +104,7 @@ function parseCurlResponse(url, stdout) {
 }
 
 
-module.exports.browser = async function (url, proxyConfig) {
+module.exports.browser = async function (url, proxyConfig = null, headers = {}) {
     var result = [];
     let isNotViglink = false;
     var isResponded = false;
@@ -118,6 +122,7 @@ module.exports.browser = async function (url, proxyConfig) {
     }
     const browser = await puppeteer.launch(browserConfig);
     const page = await browser.newPage();
+    await page.setExtraHTTPHeaders(headers);
     await page.setUserAgent(userAgent);
     if (proxyConfig != null) {
         await page.authenticate({
