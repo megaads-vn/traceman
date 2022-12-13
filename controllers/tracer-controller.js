@@ -77,6 +77,10 @@ function TracerController($config, $event, $logger, $gearman) {
         let result = null;
         let proxyConfig = null;
         let location = inputs["location"];
+        let requestHeaders = {};
+        if (inputs.referer != null) {
+            requestHeaders["Referer"] = inputs.referer;
+        }
         let requestFlow = buildRequestFlow(inputs);
         if (location) {
             proxyConfig = $config.get("proxies." + inputs["location"], null);
@@ -91,7 +95,7 @@ function TracerController($config, $event, $logger, $gearman) {
             //requestType == 'browser' && result.length <= 2 do code cũ check
             if (!result || (requestType == 'browser' && result.length <= 2)) {
                 $logger.debug(`Requesting using ${requestType} ... ${url}`);
-                result = await requestHandle(url, proxyConfig, requestType);
+                result = await requestHandle(url, proxyConfig, requestType, requestHeaders);
                 $logger.debug(`Request using ${requestType} done ... ${url}`);
             }
         }
@@ -115,12 +119,12 @@ function TracerController($config, $event, $logger, $gearman) {
     }
 
 
-    async function requestHandle(url, proxyConfig, requestType) {
+    async function requestHandle(url, proxyConfig, requestType, requestHeaders = {}) {
         let result = null;
         if (requestType == 'curl') {
-            result = await Trace.curl(url, proxyConfig);
+            result = await Trace.curl(url, proxyConfig, requestHeaders);
         } else if (requestType == 'browser') {
-            result = await Trace.browser(url, proxyConfig);
+            result = await Trace.browser(url, proxyConfig, requestHeaders);
         }
         return result;
     }
