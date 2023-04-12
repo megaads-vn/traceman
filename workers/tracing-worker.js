@@ -14,7 +14,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
             var result = null;
             var proxyConfig = null;
             if (inputs["location"] != null) {
-                 proxyConfig = $config.get("proxies." + inputs["location"], null);
+                proxyConfig = $config.get("proxies." + inputs["location"], null);
                 if (proxyConfig == null) {
                     proxyConfig = $config.get("proxies.default");
                 }
@@ -24,7 +24,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
             $logger.debug(`Requesting using CURL ... ${url}`);
             result = await requestUsingCurl(url, proxyConfig);
             $logger.debug(`Request using CURL done ... ${url}`);
-            if ((result == null || result.length <= 2) && inputs["location"] == null) {
+            const lastStatus = result[result.length - 1].status;
+            if ((result == null || result.length <= 2 || lastStatus == "405") && inputs["location"] == null) {
                 $logger.debug(`Requesting using browser  ... ${url}`);
                 result = await requestUsingBrowser(url, proxyConfig);
                 $logger.debug(`Request using browser done ... ${url}`);
@@ -59,7 +60,7 @@ function TracingWorker($config, $logger, $event, $gearman) {
         }
         return new Promise(async (resolve, reject) => {
             try {
-                setTimeout(function(isResponded){
+                setTimeout(function (isResponded) {
                     resolve([]);
                 }, 30000);
 
@@ -109,8 +110,8 @@ function TracingWorker($config, $logger, $event, $gearman) {
                 await browser.close();
                 $logger.debug(`Request using browser timeout ${url}`);
                 reject({
-                    "status" : 'fail',
-                    "message" : "Request using browser timeout, can not tracing."
+                    "status": 'fail',
+                    "message": "Request using browser timeout, can not tracing."
                 });
 
 
