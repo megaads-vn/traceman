@@ -218,7 +218,7 @@ function Util() {
      * @returns {String}
      */
     this.getLocalIP = function() {
-        var retval = "10.0.0.172";
+        var retval = "127.0.0.1";
         var interfaces = os.networkInterfaces();
         for (var k in interfaces) {
             for (var k2 in interfaces[k]) {
