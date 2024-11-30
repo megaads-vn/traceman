@@ -11,7 +11,7 @@
     "dependencies": {
         "cache": "*",
         "crypto": "*",
-        "ejs": "2.*",
+        "ejs": "3.*",
         "ip2location-nodejs": "^8.3.0",
         "limiter": "*",
         "lru-cache": "4.*",
