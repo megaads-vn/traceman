@@ -92,8 +92,8 @@ function TracerController($config, $event, $logger, $gearman) {
         $logger.debug(`Inputs ... `, inputs);
         for (let i = 0; i < requestFlow.length; i++) {
             let requestType = requestFlow[i];
-            //requestType == 'browser' && result.length <= 2 do code cũ check
-            if (!result || (requestType == 'browser' && result.length <= 2)) {
+            //requestType == 'browser' && result.length <= 3 do code cũ check
+            if (!result || (requestType == 'browser' && result.length <= 3)) {
                 $logger.debug(`Requesting using ${requestType} ... ${url}`);
                 result = await requestHandle(url, proxyConfig, requestType, requestHeaders);
                 $logger.debug(`Request using ${requestType} done ... ${url}`);
